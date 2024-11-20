@@ -1,6 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import supabase from "utils/supabase";
+import Login from "components/login";
+import supabase from "utils/supabase.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -19,7 +20,10 @@ export default function Index() {
   console.log(messages);
   return (
     <>
-      <pre>{JSON.stringify(messages, null, 2)}</pre>
+      <pre>
+        <Login />
+        {JSON.stringify(messages, null, 2)}
+      </pre>
     </>
   );
 }
