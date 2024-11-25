@@ -1,4 +1,4 @@
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import {
   json,
   Links,
@@ -9,9 +9,11 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import type { Database } from "db_types";
+import createServerSupabase from "utils/supabase.server";
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { useState } from "react";
+import { createBrowserClient } from "@supabase/auth-helpers-remix";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 import "./tailwind.css";
 
 type TypedSupabaseClient = SupabaseClient<Database>;
@@ -33,13 +35,19 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL!,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
   };
 
-  return json({ env });
+  const response = new Response();
+  const supabase = createServerSupabase({ request, response });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return json({ env, session }, { headers: response.headers });
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -61,9 +69,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { env } = useLoaderData<typeof loader>();
+  const { env, session } = useLoaderData<typeof loader>();
   const [supabase] = useState(() =>
-    createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
+    createBrowserClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
   );
+  console.log({ server: { session } });
+
+  useEffect(() => {
+    supabase.auth
+      .getSession()
+      .then((session) => console.log({ client: { session } }));
+  }, []);
+
   return <Outlet context={{ supabase }} />;
 }
