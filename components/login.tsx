@@ -4,7 +4,6 @@ import type { SupabaseOutletContext } from "~/root";
 
 export default function Login() {
   const { supabase } = useOutletContext<SupabaseOutletContext>();
-  console.log(supabase);
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
